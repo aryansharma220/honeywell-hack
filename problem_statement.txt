@@ -1,0 +1,214 @@
+﻿Multivariate Time Series Anomaly Detection
+Problem Background
+Performance management systems continuously monitor asset health using data from sensors, IoT
+devices, and other sources. They analyze this data to identify potential issues, predict failures, and
+optimize maintenance schedules. The process includes identifying data points, patterns, or events
+that deviate significantly from what is considered normal or expected within a dataset. This helps
+organizations transition from reactive to proactive and predictive maintenance strategies, leading to
+increased efficiency, reduced costs, and improved asset reliability.
+
+Objective
+Develop a Python-based machine learning solution to detect anomalies in multivariate time series
+data and identify the primary contributing features for each anomaly.
+
+
+
+Section Explanation
+Build a Python program to detect anomalies (abnormal behavior) in time series data that has
+
+Goal
+multiple columns (i.e., multivariate).
+A CSV file with:<br>1) Multiple columns of numerical time series data<br>2) A defined time
+range or label for normal data (used for training)<br><br>Modify the same CSV by adding
+
+Input exactly 8 new columns:<br>1) Abnormality score: Float values from 0.0 to 100.0<br>2)
+top_feature_1 through top_feature_7: String values containing original column names<br>3)
+If fewer than 7 features contribute, fill remaining columns with empty strings
+
+For each row, identify which 7 columns (features) contributed the most to the abnormal
+behavior:<br>1) Use model-specific methods<br>2) Rank by absolute contribution
+
+Output magnitude<br>3) Break ties using alphabetical order<br>4) Only include features
+contributing >1% to the anomaly<br>5) Fill remaining slots with empty strings if fewer than
+7 contributors
+
+Definition:
+Data that is collected at regular intervals over time. Example: temperature readings every
+
+Time Series
+hour, pressure measurements every minute.
+
+Data
+Definition: Data with multiple variables being recorded at each time point.<br>1) Example:
+Multivariate temperature, humidity, pressure, vibration, flow rate all measured simultaneously.
+
+A period in the data where everything was working fine (no abnormalities). This is used to
+Definition:
+
+train the model.<br>1) For this Hackathon: Normal Period for Model Training is 1/1/2004
+Normal Period
+
+0:00 to 1/5/2004 23:59 (120 hours of data).
+ 
+
+
+
+Identifying values in the data that don't behave like the normal period. These are
+What is "weird" or "unexpected" patterns.<br>1) For this Hackathon: Period for Model
+Anomaly Execution and searching for Anomalies is 1/1/2004 0:00 to 1/19/2004 7:59 (439 hours
+Detection? of data).<br>2) Important: Overlap with the Training period is deliberate. Anomaly
+
+scores should be close to 0 (< 10) for the training period to validate model correctness.
+ 
+
+1) Threshold Violation – Individual variables exceeding their normal statistical ranges
+Type of (e.g., > 3 standard deviations from training mean)<br>2) Relationship Change –
+Anomalies to Variables no longer following their usual correlations (e.g., temperature and humidity
+Detect normally correlate at r=0.8, but suddenly show r=0.2)<br>3) Pattern Deviations –
+
+Temporal sequences that differ from normal operational patterns
+ 
+
+1) 0-10: Normal behavior (expected for training period)<br>2) 11-30: Slightly
+Degree of unusual but acceptable<br>3) 31-60: Moderate anomaly requiring attention<br>4)
+Abnormality (0- 61-90: Significant anomaly needing investigation<br>5) 91-100: Severe anomaly
+100 Scale) requiring immediate action<br>6) Calculation Method: Transform model outputs
+
+using percentile ranking within the analysis period.
+ 
+
+For each row, identify which 7 columns (features) contributed the most to the
+Top abnormal behavior:<br>1) Use model-specific methods<br>2) Rank by absolute
+Contributors contribution magnitude<br>3) Break ties using alphabetical order<br>4) Only
+Calculation include features contributing >1% to the anomaly<br>5) Fill remaining slots with
+
+empty strings if fewer than 7 contributors
+ 
+
+
+
+Optional - your code should handle:<br>1) Missing values: Use forward-
+Data Quality Handling<br> fill or linear interpolation<br>2) Invalid data: Replace non-numerical
+<br>(Optional in this values with last good values<br>3) Timestamp validation: Ensure
+Hackathon since the data regular intervals<br>4) Constant features: Handle features with zero
+provided is of good quality) variance<br>5) Error reporting: Provide clear error messages for data
+
+issues
+ 
+
+1) Data Preprocessing: Load CSV, validate timestamps, handle missing values<br>2) Data
+Splitting: Separate normal period (training) from full analysis period<br>3) Model Training:
+
+Steps
+Train anomaly detection model on normal data only<br>4) Anomaly Detection: Apply model
+
+to
+to entire analysis period<br>5) Score Calculation: Transform model outputs to 0-100
+
+Build
+scale<br>6) Feature Attribution: Calculate contributing features for each row<br>7) Output
+Generation: Add 8 new columns to original CSV file
+
+ 
+
+Primary Options:<br>1) Isolation Forest: Good for global anomalies, built-in feature
+importance<br>2) Autoencoders: Learn complex patterns, use reconstruction
+
+ML error<br>3) PCA-based: Dimensionality reduction with reconstruction error<br>
+Technique <br>Advanced Options:<br>1) LSTM Autoencoders: For temporal pattern
+Suggested learning<br>2) Ensemble Methods: Combine multiple techniques<br><br>Potential
+
+Libraries:<br>1) Sklearn<br>2) Tensorflow<br>3) Keras<br>4) Pytorch<br>5) or any
+Python library
+
+ 
+
+
+
+1) Main function: Accept input_csv_path and output_csv_path as parameters<br>2)
+Modular design: Separate classes for data processing, model training,
+
+Code Structure prediction<br>3) Type hints: Include type annotations for all functions<br>4)
+Requirements Documentation: Docstrings for all classes and functions<br>5) PEP8 compliance:
+
+Follow Python style guidelines<br>6) Error handling: Graceful handling of common
+issues
+
+ 
+
+1) All original columns<br>2) Abnormality_score (0 to 100)<br>3)
+Expected Columns
+
+top_feature_1, top_feature_2, ..., top_feature_7 (names of top contributing
+in Output CSV
+
+columns)
+ 
+
+Functional Requirements:<br>1) Code runs without errors on test dataset.<br>2) Produces
+all required output columns<br>3) Code runs without errors on other datasets that are
+formatted identical to given test dataset.<br>4) Training period anomaly scores: mean < 10,
+
+Success
+max < 25<br><br>Technical Quality:<br>1) Follows PEP8 standards<br>2) Modular,
+
+Criteria
+documented code<br>3) Handles edge cases appropriately<br><br>Performance
+Validation:<br>1) Feature attributions make logical sense<br>2) No sudden score jumps
+between adjacent time points<br>3) Reasonable runtime (< 15 minutes for typical datasets)
+
+ 
+
+1) All normal data: Should produce low scores (0-20 range)<br>2) Training period
+Edge anomalies: Warn user but proceed with training<br>3) Insufficient data: Require minimum
+Cases to 72 hours of training data<br>4) Single feature dataset: Handle cases with <7
+Handle features<br>5) Perfect predictions: Add small noise to avoid exactly 0 scores<br>6)
+
+Memory constraints: Handle datasets up to 10,000 rows efficiently
+ 
+
+1) Python script(s): Complete, executable solution<br>2) Modified CSV file: Original
+Deliverables
+
+data with 8 new columns<br>3) Sample usage: Example of how to run the code
+ 
+
+
+
+1) The code will be executed by the person evaluating.<br>2) The code must run and
+Evaluation
+
+generate the output specified above.<br>3) The code should be modular and follow PEP8.
+ 
+
+Download the file from here: TEP_Train_Test.csv
+
+Your output needs to be uploaded as pdf file(s) only, using the "Upload Files" option below.
+
+You also need to provide an outline of your submission in the text box below. The outline
+should contain:
+
+1. Proposed Solution (Describe your Idea/Solution/Prototype):
+
+Detailed explanation of the proposed solution
+How it addresses the problem
+Innovation and uniqueness of the solution
+
+2. Technical Approach:
+
+Technologies to be used (e.g. programming languages, frameworks, hardware)
+Methodology and process for implementation (Flow Charts/Images/ working prototype)
+
+3. Feasibility and Viability:
+
+Analysis of the feasibility of the idea
+Potential challenges and risks
+Strategies for overcoming these challenges
+
+4. Research and References:
+
+
+
+Details / Links of the reference and research work
+
+Write your answer here
