@@ -10,3 +10,4 @@ dash>=2.14.0
 dash-bootstrap-components>=1.4.0
 streamlit-aggrid>=0.3.4
 streamlit-plotly-events>=0.0.6
+tqdm>=4.64.0

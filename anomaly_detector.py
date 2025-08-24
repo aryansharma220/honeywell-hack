@@ -16,6 +16,38 @@ from scipy import stats
 import warnings
 warnings.filterwarnings('ignore')
 
+# Progress bar imports
+try:
+    from tqdm import tqdm
+    TQDM_AVAILABLE = True
+except ImportError:
+    TQDM_AVAILABLE = False
+    # Fallback progress indicator
+    class tqdm:
+        def __init__(self, iterable=None, total=None, desc=None, **kwargs):
+            self.iterable = iterable or range(total) if total else []
+            self.desc = desc or "Processing"
+            self.total = total or len(self.iterable) if hasattr(self.iterable, '__len__') else 0
+            self.n = 0
+            
+        def __iter__(self):
+            for item in self.iterable:
+                yield item
+                self.update(1)
+            return self
+            
+        def __enter__(self):
+            return self
+            
+        def __exit__(self, *args):
+            pass
+            
+        def update(self, n=1):
+            self.n += n
+            if self.total > 0:
+                percentage = (self.n / self.total) * 100
+                print(f"\r{self.desc}: {percentage:.1f}% ({self.n}/{self.total})", end="", flush=True)
+
 import config
 import utils
 
@@ -51,17 +83,35 @@ class TimeSeriesAnomalyDetector:
         Returns:
             pd.DataFrame: Cleaned dataframe
         """
+        if config.ENABLE_PROGRESS_BARS:
+            print("Preparing data...")
+            
         df_processed = df.copy()
         
         # Fix deprecated pandas method
-        df_processed = df_processed.ffill().bfill()
-        
-        if df_processed.isnull().any().any():
-            if self.imputer is None:
-                self.imputer = SimpleImputer(strategy=config.IMPUTATION_STRATEGY)
-                df_processed[self.feature_columns] = self.imputer.fit_transform(df_processed[self.feature_columns])
-            else:
-                df_processed[self.feature_columns] = self.imputer.transform(df_processed[self.feature_columns])
+        if config.ENABLE_PROGRESS_BARS:
+            with tqdm(total=3, desc="Data cleaning") as pbar:
+                df_processed = df_processed.ffill().bfill()
+                pbar.update(1)
+                
+                if df_processed.isnull().any().any():
+                    if self.imputer is None:
+                        self.imputer = SimpleImputer(strategy=config.IMPUTATION_STRATEGY)
+                        df_processed[self.feature_columns] = self.imputer.fit_transform(df_processed[self.feature_columns])
+                    else:
+                        df_processed[self.feature_columns] = self.imputer.transform(df_processed[self.feature_columns])
+                pbar.update(1)
+                
+                pbar.update(1)  # Final step
+        else:
+            df_processed = df_processed.ffill().bfill()
+            
+            if df_processed.isnull().any().any():
+                if self.imputer is None:
+                    self.imputer = SimpleImputer(strategy=config.IMPUTATION_STRATEGY)
+                    df_processed[self.feature_columns] = self.imputer.fit_transform(df_processed[self.feature_columns])
+                else:
+                    df_processed[self.feature_columns] = self.imputer.transform(df_processed[self.feature_columns])
         
         return df_processed
     
@@ -108,38 +158,79 @@ class TimeSeriesAnomalyDetector:
         
         print(f"Training on {len(self.feature_columns)} features")
         
-        train_processed = self._prepare_data(training_data)
-        
-        X_train = train_processed[self.feature_columns].values
-        
-        # Edge case: Handle constant features (zero variance)
-        feature_variances = np.var(X_train, axis=0)
-        constant_features = feature_variances < 1e-8
-        if np.any(constant_features):
-            constant_feature_names = [self.feature_columns[i] for i in range(len(self.feature_columns)) if constant_features[i]]
-            print(f"Warning: Constant features detected and will be handled: {constant_feature_names}")
-            # Add small noise to constant features to avoid scaling issues
-            X_train[:, constant_features] += np.random.normal(0, 1e-6, (X_train.shape[0], np.sum(constant_features)))
-        
-        self.scaler = StandardScaler()
-        X_train_scaled = self.scaler.fit_transform(X_train)
-        
-        self.training_stats = {
-            'mean': np.mean(X_train_scaled, axis=0),
-            'std': np.std(X_train_scaled, axis=0)
-        }
-        
-        # Improve isolation forest parameters for better performance
-        self.model = IsolationForest(
-            contamination=self.contamination,
-            random_state=self.random_state,
-            n_estimators=config.N_ESTIMATORS,
-            max_samples='auto',  # Use all samples for better training
-            bootstrap=False,      # Don't bootstrap for better consistency
-            n_jobs=-1            # Use all CPU cores
-        )
-        
-        self.model.fit(X_train_scaled)
+        if config.ENABLE_PROGRESS_BARS:
+            with tqdm(total=6, desc="Training model") as pbar:
+                train_processed = self._prepare_data(training_data)
+                pbar.update(1)
+                
+                X_train = train_processed[self.feature_columns].values
+                pbar.update(1)
+                
+                # Edge case: Handle constant features (zero variance)
+                feature_variances = np.var(X_train, axis=0)
+                constant_features = feature_variances < 1e-8
+                if np.any(constant_features):
+                    constant_feature_names = [self.feature_columns[i] for i in range(len(self.feature_columns)) if constant_features[i]]
+                    print(f"\nWarning: Constant features detected and will be handled: {constant_feature_names}")
+                    # Add small noise to constant features to avoid scaling issues
+                    X_train[:, constant_features] += np.random.normal(0, 1e-6, (X_train.shape[0], np.sum(constant_features)))
+                pbar.update(1)
+                
+                self.scaler = StandardScaler()
+                X_train_scaled = self.scaler.fit_transform(X_train)
+                pbar.update(1)
+                
+                self.training_stats = {
+                    'mean': np.mean(X_train_scaled, axis=0),
+                    'std': np.std(X_train_scaled, axis=0)
+                }
+                pbar.update(1)
+                
+                # Improve isolation forest parameters for better performance
+                self.model = IsolationForest(
+                    contamination=self.contamination,
+                    random_state=self.random_state,
+                    n_estimators=config.N_ESTIMATORS,
+                    max_samples='auto',  # Use all samples for better training
+                    bootstrap=False,      # Don't bootstrap for better consistency
+                    n_jobs=-1            # Use all CPU cores
+                )
+                
+                self.model.fit(X_train_scaled)
+                pbar.update(1)
+        else:
+            train_processed = self._prepare_data(training_data)
+            
+            X_train = train_processed[self.feature_columns].values
+            
+            # Edge case: Handle constant features (zero variance)
+            feature_variances = np.var(X_train, axis=0)
+            constant_features = feature_variances < 1e-8
+            if np.any(constant_features):
+                constant_feature_names = [self.feature_columns[i] for i in range(len(self.feature_columns)) if constant_features[i]]
+                print(f"Warning: Constant features detected and will be handled: {constant_feature_names}")
+                # Add small noise to constant features to avoid scaling issues
+                X_train[:, constant_features] += np.random.normal(0, 1e-6, (X_train.shape[0], np.sum(constant_features)))
+            
+            self.scaler = StandardScaler()
+            X_train_scaled = self.scaler.fit_transform(X_train)
+            
+            self.training_stats = {
+                'mean': np.mean(X_train_scaled, axis=0),
+                'std': np.std(X_train_scaled, axis=0)
+            }
+            
+            # Improve isolation forest parameters for better performance
+            self.model = IsolationForest(
+                contamination=self.contamination,
+                random_state=self.random_state,
+                n_estimators=config.N_ESTIMATORS,
+                max_samples='auto',  # Use all samples for better training
+                bootstrap=False,      # Don't bootstrap for better consistency
+                n_jobs=-1            # Use all CPU cores
+            )
+            
+            self.model.fit(X_train_scaled)
         
         print("Training completed successfully")
     
@@ -300,48 +391,102 @@ class TimeSeriesAnomalyDetector:
         if self.model is None:
             raise ValueError("Model must be trained before prediction")
         
-        analysis_processed = self._prepare_data(analysis_data)
-        
-        X_analysis = analysis_processed[self.feature_columns].values
-        X_analysis_scaled = self.scaler.transform(X_analysis)
-        
-        anomaly_scores_raw = self.model.decision_function(X_analysis_scaled)
-        
-        # Identify training vs analysis periods
-        train_mask = analysis_data['Time'].apply(
-            lambda x: utils.parse_datetime(x) <= config.TRAINING_END
-        )
-        
-        # Calibrate scores differently for training and analysis periods
-        isolation_scores = np.zeros_like(anomaly_scores_raw)
-        
-        if train_mask.any():
-            # Training period scores - use conservative scaling
-            train_indices = train_mask.values
-            isolation_scores[train_indices] = self._calibrate_scores_percentile(
-                anomaly_scores_raw[train_indices], is_training=True
+        if config.ENABLE_PROGRESS_BARS:
+            with tqdm(total=8, desc="Predicting anomalies") as pbar:
+                analysis_processed = self._prepare_data(analysis_data)
+                pbar.update(1)
+                
+                X_analysis = analysis_processed[self.feature_columns].values
+                X_analysis_scaled = self.scaler.transform(X_analysis)
+                pbar.update(1)
+                
+                anomaly_scores_raw = self.model.decision_function(X_analysis_scaled)
+                pbar.update(1)
+                
+                # Identify training vs analysis periods
+                train_mask = analysis_data['Time'].apply(
+                    lambda x: utils.parse_datetime(x) <= config.TRAINING_END
+                )
+                pbar.update(1)
+                
+                # Calibrate scores differently for training and analysis periods
+                isolation_scores = np.zeros_like(anomaly_scores_raw)
+                
+                if train_mask.any():
+                    # Training period scores - use conservative scaling
+                    train_indices = train_mask.values
+                    isolation_scores[train_indices] = self._calibrate_scores_percentile(
+                        anomaly_scores_raw[train_indices], is_training=True
+                    )
+                
+                if (~train_mask).any():
+                    # Analysis period scores - use full percentile ranking
+                    analysis_indices = (~train_mask).values
+                    isolation_scores[analysis_indices] = self._calibrate_scores_percentile(
+                        anomaly_scores_raw[analysis_indices], is_training=False
+                    )
+                pbar.update(1)
+                
+                # Add temporal pattern detection
+                temporal_scores = self._detect_temporal_patterns(X_analysis_scaled)
+                pbar.update(1)
+                
+                # Combine isolation forest and temporal scores (weighted average)
+                # 70% isolation forest, 30% temporal patterns
+                anomaly_scores_100 = 0.7 * isolation_scores + 0.3 * temporal_scores
+                
+                # Ensure scores are within 0-100 range
+                anomaly_scores_100 = np.clip(anomaly_scores_100, 0, 100)
+                
+                importance_scores = self._calculate_feature_importance(X_analysis_scaled)
+                pbar.update(1)
+                
+                top_features_list = self._get_top_features(importance_scores)
+                pbar.update(1)
+                
+        else:
+            analysis_processed = self._prepare_data(analysis_data)
+            
+            X_analysis = analysis_processed[self.feature_columns].values
+            X_analysis_scaled = self.scaler.transform(X_analysis)
+            
+            anomaly_scores_raw = self.model.decision_function(X_analysis_scaled)
+            
+            # Identify training vs analysis periods
+            train_mask = analysis_data['Time'].apply(
+                lambda x: utils.parse_datetime(x) <= config.TRAINING_END
             )
-        
-        if (~train_mask).any():
-            # Analysis period scores - use full percentile ranking
-            analysis_indices = (~train_mask).values
-            isolation_scores[analysis_indices] = self._calibrate_scores_percentile(
-                anomaly_scores_raw[analysis_indices], is_training=False
-            )
-        
-        # Add temporal pattern detection
-        temporal_scores = self._detect_temporal_patterns(X_analysis_scaled)
-        
-        # Combine isolation forest and temporal scores (weighted average)
-        # 70% isolation forest, 30% temporal patterns
-        anomaly_scores_100 = 0.7 * isolation_scores + 0.3 * temporal_scores
-        
-        # Ensure scores are within 0-100 range
-        anomaly_scores_100 = np.clip(anomaly_scores_100, 0, 100)
-        
-        importance_scores = self._calculate_feature_importance(X_analysis_scaled)
-        
-        top_features_list = self._get_top_features(importance_scores)
+            
+            # Calibrate scores differently for training and analysis periods
+            isolation_scores = np.zeros_like(anomaly_scores_raw)
+            
+            if train_mask.any():
+                # Training period scores - use conservative scaling
+                train_indices = train_mask.values
+                isolation_scores[train_indices] = self._calibrate_scores_percentile(
+                    anomaly_scores_raw[train_indices], is_training=True
+                )
+            
+            if (~train_mask).any():
+                # Analysis period scores - use full percentile ranking
+                analysis_indices = (~train_mask).values
+                isolation_scores[analysis_indices] = self._calibrate_scores_percentile(
+                    anomaly_scores_raw[analysis_indices], is_training=False
+                )
+            
+            # Add temporal pattern detection
+            temporal_scores = self._detect_temporal_patterns(X_analysis_scaled)
+            
+            # Combine isolation forest and temporal scores (weighted average)
+            # 70% isolation forest, 30% temporal patterns
+            anomaly_scores_100 = 0.7 * isolation_scores + 0.3 * temporal_scores
+            
+            # Ensure scores are within 0-100 range
+            anomaly_scores_100 = np.clip(anomaly_scores_100, 0, 100)
+            
+            importance_scores = self._calculate_feature_importance(X_analysis_scaled)
+            
+            top_features_list = self._get_top_features(importance_scores)
         
         result_df = analysis_data.copy()
         
@@ -376,79 +521,154 @@ def detect_anomalies(input_csv_path: str, output_csv_path: str) -> bool:
     
     print(f"Loading data from: {input_csv_path}")
     
-    try:
-        df = pd.read_csv(input_csv_path)
-        
-        # Basic data validation
-        if df.empty:
-            print("Error: Dataset is empty!")
-            return False
-            
-        if 'Time' not in df.columns:
-            print("Error: 'Time' column not found in dataset!")
-            return False
-            
-        print(f"Data loaded successfully. Shape: {df.shape}")
-        
-    except FileNotFoundError:
-        print(f"Error: File '{input_csv_path}' not found!")
-        return False
-    except pd.errors.EmptyDataError:
-        print(f"Error: File '{input_csv_path}' is empty!")
-        return False
-    except Exception as e:
-        print(f"Error loading data: {e}")
-        return False
+    if config.ENABLE_PROGRESS_BARS:
+        with tqdm(total=7, desc="Overall progress") as main_pbar:
+            try:
+                df = pd.read_csv(input_csv_path)
+                main_pbar.update(1)
+                
+                # Basic data validation
+                if df.empty:
+                    print("Error: Dataset is empty!")
+                    return False
+                    
+                if 'Time' not in df.columns:
+                    print("Error: 'Time' column not found in dataset!")
+                    return False
+                    
+                print(f"Data loaded successfully. Shape: {df.shape}")
+                main_pbar.update(1)
+                
+            except FileNotFoundError:
+                print(f"Error: File '{input_csv_path}' not found!")
+                return False
+            except pd.errors.EmptyDataError:
+                print(f"Error: File '{input_csv_path}' is empty!")
+                return False
+            except Exception as e:
+                print(f"Error loading data: {e}")
+                return False
 
-    try:
-        detector = TimeSeriesAnomalyDetector()
-        
-        training_data, analysis_data = detector._split_training_data(df)
-        
-        if training_data.empty:
-            print("Error: No training data found!")
-            return False
+            try:
+                detector = TimeSeriesAnomalyDetector()
+                
+                training_data, analysis_data = detector._split_training_data(df)
+                main_pbar.update(1)
+                
+                if training_data.empty:
+                    print("Error: No training data found!")
+                    return False
+                    
+                if analysis_data.empty:
+                    print("Error: No analysis data found!")
+                    return False
+                
+                print(f"Training period: {len(training_data)} rows")
+                print(f"Analysis period: {len(analysis_data)} rows")
+                print("Training anomaly detection model...")
+                
+                detector.train(training_data)
+                main_pbar.update(1)
+                
+                print("Detecting anomalies...")
+                result_df = detector.predict(analysis_data)
+                main_pbar.update(1)
+                
+                train_mask = result_df['Time'].apply(
+                    lambda x: utils.parse_datetime(x) <= config.TRAINING_END
+                )
+                training_scores = result_df[train_mask][config.ANOMALY_SCORE_COLUMN]
+                
+                utils.validate_training_scores(training_scores)
+                main_pbar.update(1)
+                
+                utils.save_results_with_validation(result_df, output_csv_path)
+                main_pbar.update(1)
+                
+                print("Anomaly detection completed successfully!")
+                utils.print_summary_statistics(result_df[config.ANOMALY_SCORE_COLUMN])
+                
+                return True
+                
+            except MemoryError:
+                print("Error: Not enough memory to process this dataset!")
+                return False
+            except KeyError as e:
+                print(f"Error: Missing required column {e}")
+                return False
+            except Exception as e:
+                print(f"Error during anomaly detection: {e}")
+                return False
+    else:
+        try:
+            df = pd.read_csv(input_csv_path)
             
-        if analysis_data.empty:
-            print("Error: No analysis data found!")
+            # Basic data validation
+            if df.empty:
+                print("Error: Dataset is empty!")
+                return False
+                
+            if 'Time' not in df.columns:
+                print("Error: 'Time' column not found in dataset!")
+                return False
+                
+            print(f"Data loaded successfully. Shape: {df.shape}")
+            
+        except FileNotFoundError:
+            print(f"Error: File '{input_csv_path}' not found!")
             return False
-        
-        print(f"Training period: {len(training_data)} rows")
-        print(f"Analysis period: {len(analysis_data)} rows")
-        print("Training anomaly detection model...")
-        
-        detector.train(training_data)
-        
-        print("Detecting anomalies...")
-        result_df = detector.predict(analysis_data)
-        
-        train_mask = result_df['Time'].apply(
-            lambda x: utils.parse_datetime(x) <= config.TRAINING_END
-        )
-        training_scores = result_df[train_mask][config.ANOMALY_SCORE_COLUMN]
-        
-        utils.validate_training_scores(training_scores)
-        
-        utils.save_results_with_validation(result_df, output_csv_path)
-        
-        print("Anomaly detection completed successfully!")
-        utils.print_summary_statistics(result_df[config.ANOMALY_SCORE_COLUMN])
-        
-        return True
-        
-    except MemoryError:
-        print("Error: Not enough memory to process this dataset!")
-        return False
-    except KeyError as e:
-        print(f"Error: Missing required column {e}")
-        return False
-    except Exception as e:
-        print(f"Error during anomaly detection: {e}")
-        return False
-        
-    except Exception as e:
-        print(f"Error during anomaly detection: {e}")
-        return
+        except pd.errors.EmptyDataError:
+            print(f"Error: File '{input_csv_path}' is empty!")
+            return False
+        except Exception as e:
+            print(f"Error loading data: {e}")
+            return False
+
+        try:
+            detector = TimeSeriesAnomalyDetector()
+            
+            training_data, analysis_data = detector._split_training_data(df)
+            
+            if training_data.empty:
+                print("Error: No training data found!")
+                return False
+                
+            if analysis_data.empty:
+                print("Error: No analysis data found!")
+                return False
+            
+            print(f"Training period: {len(training_data)} rows")
+            print(f"Analysis period: {len(analysis_data)} rows")
+            print("Training anomaly detection model...")
+            
+            detector.train(training_data)
+            
+            print("Detecting anomalies...")
+            result_df = detector.predict(analysis_data)
+            
+            train_mask = result_df['Time'].apply(
+                lambda x: utils.parse_datetime(x) <= config.TRAINING_END
+            )
+            training_scores = result_df[train_mask][config.ANOMALY_SCORE_COLUMN]
+            
+            utils.validate_training_scores(training_scores)
+            
+            utils.save_results_with_validation(result_df, output_csv_path)
+            
+            print("Anomaly detection completed successfully!")
+            utils.print_summary_statistics(result_df[config.ANOMALY_SCORE_COLUMN])
+            
+            return True
+            
+        except MemoryError:
+            print("Error: Not enough memory to process this dataset!")
+            return False
+        except KeyError as e:
+            print(f"Error: Missing required column {e}")
+            return False
+        except Exception as e:
+            print(f"Error during anomaly detection: {e}")
+            return False
 
 
 if __name__ == "__main__":
