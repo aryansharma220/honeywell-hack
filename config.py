@@ -27,11 +27,5 @@ SCALING_METHOD = 'standard'
 ANOMALY_SCORE_COLUMN = 'Abnormality_score'
 TOP_FEATURE_COLUMNS = [f'top_feature_{i}' for i in range(1, MAX_TOP_FEATURES + 1)]
 
-MAX_DATASET_ROWS = 100000 
-MAX_RUNTIME_MINUTES = 15
-
 # Progress indicator settings
 ENABLE_PROGRESS_BARS = True
-PROGRESS_UPDATE_INTERVAL = 0.1  # seconds
-SHOW_ETA = True
-PROGRESS_BAR_WIDTH = 50

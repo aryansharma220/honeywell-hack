@@ -6,7 +6,6 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from typing import Tuple, List, Optional
-import json
 import config
 
 
@@ -126,16 +125,16 @@ def validate_training_scores(scores: pd.Series, period_name: str = "training") -
     validation_passed = True
     
     if mean_score >= config.MAX_TRAINING_MEAN_SCORE:
-        print(f"❌ FAIL: Mean score {mean_score:.2f} >= {config.MAX_TRAINING_MEAN_SCORE}")
+        print(f"FAIL: Mean score {mean_score:.2f} >= {config.MAX_TRAINING_MEAN_SCORE}")
         validation_passed = False
     else:
-        print(f"✅ PASS: Mean score {mean_score:.2f} < {config.MAX_TRAINING_MEAN_SCORE}")
+        print(f"PASS: Mean score {mean_score:.2f} < {config.MAX_TRAINING_MEAN_SCORE}")
     
     if max_score >= config.MAX_TRAINING_MAX_SCORE:
-        print(f"❌ FAIL: Max score {max_score:.2f} >= {config.MAX_TRAINING_MAX_SCORE}")
+        print(f"FAIL: Max score {max_score:.2f} >= {config.MAX_TRAINING_MAX_SCORE}")
         validation_passed = False
     else:
-        print(f"✅ PASS: Max score {max_score:.2f} < {config.MAX_TRAINING_MAX_SCORE}")
+        print(f"PASS: Max score {max_score:.2f} < {config.MAX_TRAINING_MAX_SCORE}")
     
     if not validation_passed:
         raise ValueError(f"{period_name.title()} period validation failed")
@@ -279,14 +278,14 @@ def create_quick_visualization(df: pd.DataFrame, save_plots: bool = True) -> Non
         
         if save_plots:
             plt.savefig('anomaly_overview.png', dpi=300, bbox_inches='tight')
-            print("📊 Quick visualization saved as: anomaly_overview.png")
+            print("Quick visualization saved as: anomaly_overview.png")
         
         plt.show()
         
     except ImportError:
-        print("⚠️  Matplotlib/Seaborn not available for visualization")
+        print("Matplotlib/Seaborn not available for visualization")
     except Exception as e:
-        print(f"⚠️  Error creating visualization: {e}")
+        print(f"Error creating visualization: {e}")
 
 
 def generate_summary_report(df: pd.DataFrame, output_file: str = None) -> str:
@@ -329,13 +328,13 @@ def generate_summary_report(df: pd.DataFrame, output_file: str = None) -> str:
 {'='*80}
 Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
-📊 DATASET OVERVIEW
+DATASET OVERVIEW
 {'─'*40}
 • Total Samples: {stats['count']:,}
 • Time Range: {df['Time'].iloc[0]} to {df['Time'].iloc[-1]}
 • Analysis Period: {(pd.to_datetime(df['Time'].iloc[-1], format=config.DATETIME_FORMAT) - pd.to_datetime(df['Time'].iloc[0], format=config.DATETIME_FORMAT)).days + 1} days
 
-📈 ANOMALY SCORE STATISTICS
+ANOMALY SCORE STATISTICS
 {'─'*40}
 • Mean Score: {stats['mean']:.2f}
 • Standard Deviation: {stats['std']:.2f}
@@ -345,14 +344,14 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 • 75th Percentile: {stats['75%']:.2f}
 • 95th Percentile: {anomaly_scores.quantile(0.95):.2f}
 
-🚨 RISK ASSESSMENT
+RISK ASSESSMENT
 {'─'*40}
-• 🔴 High Risk (Score ≥ 75):     {high_risk:,} samples ({high_risk/len(df)*100:.1f}%)
-• 🟠 Medium Risk (50 ≤ Score < 75): {medium_risk:,} samples ({medium_risk/len(df)*100:.1f}%)
-• 🟡 Low Risk (25 ≤ Score < 50):    {low_risk:,} samples ({low_risk/len(df)*100:.1f}%)
-• 🟢 Normal (Score < 25):        {normal:,} samples ({normal/len(df)*100:.1f}%)
+• High Risk (Score ≥ 75):     {high_risk:,} samples ({high_risk/len(df)*100:.1f}%)
+• Medium Risk (50 ≤ Score < 75): {medium_risk:,} samples ({medium_risk/len(df)*100:.1f}%)
+• Low Risk (25 ≤ Score < 50):    {low_risk:,} samples ({low_risk/len(df)*100:.1f}%)
+• Normal (Score < 25):        {normal:,} samples ({normal/len(df)*100:.1f}%)
 
-🎯 TOP 5 CRITICAL ANOMALIES
+TOP 5 CRITICAL ANOMALIES
 {'─'*40}
 """
     
@@ -364,7 +363,7 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
     
     if not feature_counts.empty:
         report += f"""
-🔧 TOP 5 CONTRIBUTING FEATURES
+TOP 5 CONTRIBUTING FEATURES
 {'─'*40}
 """
         for i, (feature, count) in enumerate(feature_counts.items(), 1):
@@ -379,33 +378,33 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
             train_stats = calculate_summary_statistics(training_scores)
             
             report += f"""
-🎓 TRAINING PERIOD ANALYSIS
+TRAINING PERIOD ANALYSIS
 {'─'*40}
 • Training Samples: {train_stats['count']:,}
 • Training Mean Score: {train_stats['mean']:.2f}
 • Training Max Score: {train_stats['max']:.2f}
-• Validation Status: {'✅ PASSED' if train_stats['mean'] < config.MAX_TRAINING_MEAN_SCORE and train_stats['max'] < config.MAX_TRAINING_MAX_SCORE else '❌ FAILED'}
+• Validation Status: {'PASSED' if train_stats['mean'] < config.MAX_TRAINING_MEAN_SCORE and train_stats['max'] < config.MAX_TRAINING_MAX_SCORE else 'FAILED'}
 """
     except:
-        report += f"\n⚠️  Training period analysis not available\n"
+        report += f"\nTraining period analysis not available\n"
     
     report += f"""
-📋 RECOMMENDATIONS
+RECOMMENDATIONS
 {'─'*40}
 """
     
     if high_risk > 0:
-        report += f"• 🚨 URGENT: Investigate {high_risk} high-risk anomalies immediately\n"
+        report += f"• URGENT: Investigate {high_risk} high-risk anomalies immediately\n"
     
     if medium_risk > len(df) * 0.1:  # More than 10% medium risk
-        report += f"• ⚠️  ATTENTION: High number of medium-risk anomalies ({medium_risk}) detected\n"
+        report += f"• ATTENTION: High number of medium-risk anomalies ({medium_risk}) detected\n"
     
     if stats['max'] > 90:
-        report += f"• 🔍 INVESTIGATE: Extremely high anomaly score detected ({stats['max']:.2f})\n"
+        report += f"• INVESTIGATE: Extremely high anomaly score detected ({stats['max']:.2f})\n"
     
     if not feature_counts.empty:
         top_feature = feature_counts.index[0]
-        report += f"• 🎯 FOCUS: Monitor '{top_feature}' sensor - most frequent contributor\n"
+        report += f"• FOCUS: Monitor '{top_feature}' sensor - most frequent contributor\n"
     
     report += f"""
 {'='*80}
@@ -416,71 +415,6 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
     if output_file:
         with open(output_file, 'w') as f:
             f.write(report)
-        print(f"📄 Summary report saved to: {output_file}")
+        print(f"Summary report saved to: {output_file}")
     
     return report
-
-
-def export_data_for_external_tools(df: pd.DataFrame, format_type: str = "json") -> str:
-    """
-    Export data in various formats for external analysis tools.
-    
-    Args:
-        df: DataFrame with results
-        format_type: Export format ('json', 'parquet', 'excel')
-        
-    Returns:
-        str: Path to exported file
-    """
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    
-    try:
-        if format_type.lower() == "json":
-            output_file = f"anomaly_results_{timestamp}.json"
-            
-            # Convert to JSON-friendly format
-            export_data = {
-                'metadata': {
-                    'export_time': datetime.now().isoformat(),
-                    'total_samples': len(df),
-                    'time_range': {
-                        'start': df['Time'].iloc[0],
-                        'end': df['Time'].iloc[-1]
-                    }
-                },
-                'statistics': calculate_summary_statistics(df[config.ANOMALY_SCORE_COLUMN]),
-                'data': df.to_dict('records')
-            }
-            
-            with open(output_file, 'w') as f:
-                json.dump(export_data, f, indent=2, default=str)
-                
-        elif format_type.lower() == "parquet":
-            output_file = f"anomaly_results_{timestamp}.parquet"
-            df.to_parquet(output_file, index=False)
-            
-        elif format_type.lower() == "excel":
-            output_file = f"anomaly_results_{timestamp}.xlsx"
-            
-            with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
-                # Main data
-                df.to_excel(writer, sheet_name='Anomaly_Results', index=False)
-                
-                # Summary statistics
-                stats_df = pd.DataFrame([calculate_summary_statistics(df[config.ANOMALY_SCORE_COLUMN])]).T
-                stats_df.columns = ['Value']
-                stats_df.to_excel(writer, sheet_name='Statistics')
-                
-                # Top anomalies
-                top_anomalies = df.nlargest(20, config.ANOMALY_SCORE_COLUMN)
-                top_anomalies.to_excel(writer, sheet_name='Top_Anomalies', index=False)
-        
-        else:
-            raise ValueError(f"Unsupported format: {format_type}")
-        
-        print(f"💾 Data exported to: {output_file}")
-        return output_file
-        
-    except Exception as e:
-        print(f"❌ Export failed: {e}")
-        return ""

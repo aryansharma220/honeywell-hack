@@ -62,7 +62,7 @@ def print_animated_header(text, char="=", delay=0.05):
 
 def create_anomaly_time_series_plot(results_df, save_path="anomaly_timeseries.png"):
     """Create comprehensive time series plot"""
-    print("📈 Creating time series visualization...")
+    print("Creating time series visualization...")
     
     # Convert time to datetime
     results_df['DateTime'] = pd.to_datetime(results_df['Time'], format=config.DATETIME_FORMAT)
@@ -124,12 +124,12 @@ def create_anomaly_time_series_plot(results_df, save_path="anomaly_timeseries.pn
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.show()
     
-    print(f"💾 Time series plot saved as: {save_path}")
+    print(f"Time series plot saved as: {save_path}")
 
 
 def create_feature_importance_visualization(results_df, save_path="feature_importance.png"):
     """Create feature importance visualization"""
-    print("🎯 Creating feature importance visualization...")
+    print("Creating feature importance visualization...")
     
     # Extract all features from top feature columns
     all_features = []
@@ -140,7 +140,7 @@ def create_feature_importance_visualization(results_df, save_path="feature_impor
     # Remove empty strings and count
     all_features = [f for f in all_features if f != ""]
     if not all_features:
-        print("⚠️  No feature importance data found")
+        print("No feature importance data found")
         return
     
     feature_counts = pd.Series(all_features).value_counts()
@@ -188,12 +188,12 @@ def create_feature_importance_visualization(results_df, save_path="feature_impor
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.show()
     
-    print(f"💾 Feature importance plot saved as: {save_path}")
+    print(f"Feature importance plot saved as: {save_path}")
 
 
 def create_advanced_analytics_plot(results_df, save_path="advanced_analytics.png"):
     """Create advanced analytics visualization"""
-    print("📊 Creating advanced analytics visualization...")
+    print("Creating advanced analytics visualization...")
     
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
     fig.suptitle('Advanced Analytics Dashboard', fontsize=16, fontweight='bold')
@@ -302,12 +302,12 @@ def create_advanced_analytics_plot(results_df, save_path="advanced_analytics.png
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.show()
     
-    print(f"💾 Advanced analytics plot saved as: {save_path}")
+    print(f"Advanced analytics plot saved as: {save_path}")
 
 
 def create_interactive_plotly_dashboard(results_df):
     """Create interactive Plotly dashboard"""
-    print("🚀 Creating interactive dashboard...")
+    print("Creating interactive dashboard...")
     
     # Convert time to datetime
     results_df['DateTime'] = pd.to_datetime(results_df['Time'], format=config.DATETIME_FORMAT)
@@ -404,7 +404,7 @@ def create_interactive_plotly_dashboard(results_df):
     
     # Save as HTML
     fig.write_html("interactive_dashboard.html")
-    print("💾 Interactive dashboard saved as: interactive_dashboard.html")
+    print("Interactive dashboard saved as: interactive_dashboard.html")
     
     # Show the plot
     fig.show()
@@ -417,37 +417,37 @@ def demonstrate_anomaly_detection():
     try:
         setup_plotting_style()
         
-        print_animated_header("🔍 ENHANCED ANOMALY DETECTION DEMO 🔍", "=", 0.02)
+        print_animated_header("ENHANCED ANOMALY DETECTION DEMO", "=", 0.02)
         
         input_file = "sample_dataset.csv"
         output_file = "anomaly_results_demo.csv"
         
         # Check if input file exists
         if not os.path.exists(input_file):
-            print(f"❌ Error: Input file '{input_file}' not found!")
-            print("💡 Make sure the sample dataset is in the current directory")
+            print(f"Error: Input file '{input_file}' not found!")
+            print("Make sure the sample dataset is in the current directory")
             return False
         
-        print(f"\n🚀 Step 1: Running anomaly detection on: {input_file}")
+        print(f"\nStep 1: Running anomaly detection on: {input_file}")
         detect_anomalies(input_file, output_file)
         
-        print(f"\n📊 Step 2: Loading and analyzing results")
+        print(f"\nStep 2: Loading and analyzing results")
         results_df = pd.read_csv(output_file)
         
-        print(f"📈 Results shape: {results_df.shape}")
-        print(f"⏰ Time range: {results_df['Time'].iloc[0]} to {results_df['Time'].iloc[-1]}")
+        print(f"Results shape: {results_df.shape}")
+        print(f"Time range: {results_df['Time'].iloc[0]} to {results_df['Time'].iloc[-1]}")
         
         anomaly_scores = results_df[config.ANOMALY_SCORE_COLUMN]
-        utils.print_summary_statistics(anomaly_scores, "📊 Anomaly Score Statistics")
+        utils.print_summary_statistics(anomaly_scores, "Anomaly Score Statistics")
         
         # Training period analysis
         train_mask = results_df['Time'].apply(
             lambda x: utils.parse_datetime(x) <= config.TRAINING_END
         )
         training_scores = anomaly_scores[train_mask]
-        utils.print_summary_statistics(training_scores, "🎯 Training Period Statistics")
+        utils.print_summary_statistics(training_scores, "Training Period Statistics")
         
-        print(f"\n🚨 Step 3: Top 10 Critical Anomalies")
+        print(f"\nStep 3: Top 10 Critical Anomalies")
         print("-" * 60)
         top_anomalies = results_df.nlargest(10, config.ANOMALY_SCORE_COLUMN)
         
@@ -456,17 +456,17 @@ def demonstrate_anomaly_detection():
             time = row['Time']
             top_feature = row[config.TOP_FEATURE_COLUMNS[0]]
             
-            # Add risk level emoji
+            # Add risk level indicator
             if score >= 75:
-                risk_emoji = "🔴"
+                risk_level = "[HIGH]"
             elif score >= 50:
-                risk_emoji = "🟠"
+                risk_level = "[MED]"
             else:
-                risk_emoji = "🟡"
+                risk_level = "[LOW]"
             
-            print(f"{risk_emoji} {i:2d}. {time} | Score: {score:6.2f} | Top Feature: {top_feature}")
+            print(f"{risk_level} {i:2d}. {time} | Score: {score:6.2f} | Top Feature: {top_feature}")
         
-        print(f"\n🎯 Step 4: Most Frequent Contributing Features")
+        print(f"\nStep 4: Most Frequent Contributing Features")
         print("-" * 60)
         
         all_features = []
@@ -539,8 +539,8 @@ def demonstrate_anomaly_detection():
         print(f"   • advanced_analytics.png")
         print(f"   • interactive_dashboard.html")
         
-        print_animated_header("🎉 ENHANCED DEMO COMPLETED SUCCESSFULLY! 🎉", "=", 0.02)
-        print("\n🚀 Next steps:")
+        print_animated_header("ENHANCED DEMO COMPLETED SUCCESSFULLY!", "=", 0.02)
+        print("\nNext steps:")
         print("   • Open the generated PNG files to view static plots")
         print("   • Open interactive_dashboard.html in your browser for interactive analysis")
         print("   • Run 'streamlit run dashboard.py' for the web dashboard")
@@ -549,8 +549,8 @@ def demonstrate_anomaly_detection():
         return True
 
     except Exception as e:
-        print(f"\n❌ Error during demonstration: {e}")
-        print("💡 Make sure all dependencies are installed:")
+        print(f"\nError during demonstration: {e}")
+        print("Make sure all dependencies are installed:")
         print("   pip install pandas numpy matplotlib seaborn plotly scikit-learn")
         return False
 

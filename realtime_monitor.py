@@ -38,7 +38,7 @@ class RealTimeMonitor:
         self.app.layout = dbc.Container([
             dbc.Row([
                 dbc.Col([
-                    html.H1("🔍 Real-Time Anomaly Monitoring", 
+                    html.H1("Real-Time Anomaly Monitoring", 
                            className="text-center mb-4 text-primary"),
                     html.Hr()
                 ])
@@ -48,13 +48,13 @@ class RealTimeMonitor:
             dbc.Row([
                 dbc.Col([
                     dbc.Card([
-                        dbc.CardHeader(html.H4("🎛️ Control Panel", className="text-center")),
+                        dbc.CardHeader(html.H4("Control Panel", className="text-center")),
                         dbc.CardBody([
                             dbc.Row([
                                 dbc.Col([
-                                    dbc.Button("🚀 Start Monitoring", id="start-btn", 
+                                    dbc.Button("Start Monitoring", id="start-btn", 
                                              color="success", className="me-2"),
-                                    dbc.Button("⏹️ Stop Monitoring", id="stop-btn", 
+                                    dbc.Button("Stop Monitoring", id="stop-btn", 
                                              color="danger", disabled=True),
                                 ], width=6),
                                 dbc.Col([
@@ -85,7 +85,7 @@ class RealTimeMonitor:
                 dbc.Col([
                     dbc.Card([
                         dbc.CardBody([
-                            html.H4("📊", className="text-center"),
+                            html.H4("Total", className="text-center"),
                             html.H2("0", id="total-samples", className="text-center"),
                             html.P("Total Samples", className="text-center text-muted")
                         ])
@@ -94,7 +94,7 @@ class RealTimeMonitor:
                 dbc.Col([
                     dbc.Card([
                         dbc.CardBody([
-                            html.H4("🚨", className="text-center"),
+                            html.H4("High", className="text-center"),
                             html.H2("0", id="high-alerts", className="text-center text-danger"),
                             html.P("High Alerts", className="text-center text-muted")
                         ])
@@ -103,7 +103,7 @@ class RealTimeMonitor:
                 dbc.Col([
                     dbc.Card([
                         dbc.CardBody([
-                            html.H4("⚠️", className="text-center"),
+                            html.H4("Medium", className="text-center"),
                             html.H2("0", id="medium-alerts", className="text-center text-warning"),
                             html.P("Medium Alerts", className="text-center text-muted")
                         ])
@@ -112,7 +112,7 @@ class RealTimeMonitor:
                 dbc.Col([
                     dbc.Card([
                         dbc.CardBody([
-                            html.H4("📈", className="text-center"),
+                            html.H4("Average", className="text-center"),
                             html.H2("0.0", id="avg-score", className="text-center"),
                             html.P("Avg Score", className="text-center text-muted")
                         ])
@@ -121,7 +121,7 @@ class RealTimeMonitor:
                 dbc.Col([
                     dbc.Card([
                         dbc.CardBody([
-                            html.H4("🎯", className="text-center"),
+                            html.H4("Maximum", className="text-center"),
                             html.H2("0.0", id="max-score", className="text-center"),
                             html.P("Max Score", className="text-center text-muted")
                         ])
@@ -130,7 +130,7 @@ class RealTimeMonitor:
                 dbc.Col([
                     dbc.Card([
                         dbc.CardBody([
-                            html.H4("⏰", className="text-center"),
+                            html.H4("Time", className="text-center"),
                             html.H2("--:--", id="last-update", className="text-center"),
                             html.P("Last Update", className="text-center text-muted")
                         ])
@@ -142,7 +142,7 @@ class RealTimeMonitor:
             dbc.Row([
                 dbc.Col([
                     dbc.Card([
-                        dbc.CardHeader(html.H5("📈 Real-Time Anomaly Scores")),
+                        dbc.CardHeader(html.H5("Real-Time Anomaly Scores")),
                         dbc.CardBody([
                             dcc.Graph(id="realtime-chart")
                         ])
@@ -150,7 +150,7 @@ class RealTimeMonitor:
                 ], width=8),
                 dbc.Col([
                     dbc.Card([
-                        dbc.CardHeader(html.H5("🚨 Recent Alerts")),
+                        dbc.CardHeader(html.H5("Recent Alerts")),
                         dbc.CardBody([
                             html.Div(id="alerts-list", style={"height": "400px", "overflow-y": "auto"})
                         ])
@@ -162,7 +162,7 @@ class RealTimeMonitor:
             dbc.Row([
                 dbc.Col([
                     dbc.Card([
-                        dbc.CardHeader(html.H5("📊 Score Distribution")),
+                        dbc.CardHeader(html.H5("Score Distribution")),
                         dbc.CardBody([
                             dcc.Graph(id="distribution-chart")
                         ])
@@ -170,7 +170,7 @@ class RealTimeMonitor:
                 ], width=6),
                 dbc.Col([
                     dbc.Card([
-                        dbc.CardHeader(html.H5("🎯 Top Features")),
+                        dbc.CardHeader(html.H5("Top Features")),
                         dbc.CardBody([
                             dcc.Graph(id="features-chart")
                         ])
@@ -410,10 +410,10 @@ class RealTimeMonitor:
             alert_components = []
             for alert in reversed(alerts[-10:]):  # Show last 10 alerts, newest first
                 color = "danger" if alert['level'] == 'High' else "warning"
-                icon = "🚨" if alert['level'] == 'High' else "⚠️"
+                level_indicator = "[HIGH]" if alert['level'] == 'High' else "[MED]"
                 
                 alert_component = dbc.Alert([
-                    html.H6(f"{icon} {alert['level']} Alert", className="alert-heading"),
+                    html.H6(f"{level_indicator} {alert['level']} Alert", className="alert-heading"),
                     html.P(f"Score: {alert['score']:.2f}", className="mb-1"),
                     html.P(f"Feature: {alert['feature']}", className="mb-1"),
                     html.Small(alert['timestamp'], className="text-muted")
@@ -426,12 +426,12 @@ class RealTimeMonitor:
     def start_monitoring(self):
         """Start the monitoring process"""
         self.is_monitoring = True
-        print("🚀 Monitoring started...")
+        print("Monitoring started...")
     
     def stop_monitoring(self):
         """Stop the monitoring process"""
         self.is_monitoring = False
-        print("⏹️ Monitoring stopped.")
+        print("Monitoring stopped.")
     
     def generate_simulated_data(self):
         """Generate simulated sensor data for demo purposes"""

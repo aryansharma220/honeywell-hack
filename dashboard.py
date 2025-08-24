@@ -1,7 +1,3 @@
-"""
-Streamlit Dashboard for Time Series Anomaly Detection
-Interactive web interface for visualizing and analyzing anomalies
-"""
 
 import streamlit as st
 import pandas as pd
@@ -9,11 +5,8 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import seaborn as sns
-import matplotlib.pyplot as plt
-from datetime import datetime, timedelta
+from datetime import datetime
 import io
-import base64
 
 from anomaly_detector import detect_anomalies, TimeSeriesAnomalyDetector
 import config
@@ -23,8 +16,8 @@ import utils
 def setup_page():
     """Configure Streamlit page settings"""
     st.set_page_config(
-        page_title="🔍 Anomaly Detection Dashboard",
-        page_icon="🔍",
+        page_title="Anomaly Detection Dashboard",
+        page_icon="�",
         layout="wide",
         initial_sidebar_state="expanded"
     )
@@ -32,12 +25,12 @@ def setup_page():
 
 def create_sidebar():
     """Create sidebar with controls and information"""
-    st.sidebar.title("🎛️ Control Panel")
+    st.sidebar.title("Control Panel")
     
     st.sidebar.markdown("---")
     
     # File upload section
-    st.sidebar.subheader("📁 Data Upload")
+    st.sidebar.subheader("Data Upload")
     uploaded_file = st.sidebar.file_uploader(
         "Choose a CSV file",
         type="csv",
@@ -45,7 +38,7 @@ def create_sidebar():
     )
     
     # Configuration section
-    st.sidebar.subheader("⚙️ Configuration")
+    st.sidebar.subheader("Configuration")
     
     contamination = st.sidebar.slider(
         "Contamination Rate",
@@ -66,7 +59,7 @@ def create_sidebar():
     )
     
     # Analysis options
-    st.sidebar.subheader("📊 Analysis Options")
+    st.sidebar.subheader("Analysis Options")
     show_training_period = st.sidebar.checkbox("Highlight Training Period", value=True)
     show_feature_importance = st.sidebar.checkbox("Show Feature Importance", value=True)
     show_correlations = st.sidebar.checkbox("Show Feature Correlations", value=False)
@@ -91,7 +84,7 @@ def create_metrics_dashboard(results_df):
     with col1:
         st.markdown(f"""
         <div class="metric-card">
-            <h3>📊 Total Samples</h3>
+            <h3>Total Samples</h3>
             <h2>{total_samples:,}</h2>
         </div>
         """, unsafe_allow_html=True)
@@ -99,7 +92,7 @@ def create_metrics_dashboard(results_df):
     with col2:
         st.markdown(f"""
         <div class="metric-card">
-            <h3>🚨 High Risk</h3>
+            <h3>High Risk</h3>
             <h2>{high_anomalies}</h2>
             <p>Score > 75</p>
         </div>
@@ -108,7 +101,7 @@ def create_metrics_dashboard(results_df):
     with col3:
         st.markdown(f"""
         <div class="metric-card">
-            <h3>⚠️ Medium Risk</h3>
+            <h3>Medium Risk</h3>
             <h2>{medium_anomalies}</h2>
             <p>Score 50-75</p>
         </div>
@@ -117,7 +110,7 @@ def create_metrics_dashboard(results_df):
     with col4:
         st.markdown(f"""
         <div class="metric-card">
-            <h3>📈 Avg Score</h3>
+            <h3>Avg Score</h3>
             <h2>{avg_score:.1f}</h2>
         </div>
         """, unsafe_allow_html=True)
@@ -125,7 +118,7 @@ def create_metrics_dashboard(results_df):
     with col5:
         st.markdown(f"""
         <div class="metric-card">
-            <h3>🎯 Max Score</h3>
+            <h3>Max Score</h3>
             <h2>{max_score:.1f}</h2>
         </div>
         """, unsafe_allow_html=True)
@@ -291,7 +284,7 @@ def process_uploaded_file(uploaded_file, contamination, threshold):
         utils.validate_dataset(df)
         
         # Run anomaly detection
-        with st.spinner("🔄 Running anomaly detection..."):
+        with st.spinner("Running anomaly detection..."):
             # Create temporary detector with custom parameters
             detector = TimeSeriesAnomalyDetector(contamination=contamination)
             
@@ -313,7 +306,7 @@ def main():
     setup_page()
     
     # Header
-    st.title("🔍 Time Series Anomaly Detection Dashboard")
+    st.title("Time Series Anomaly Detection Dashboard")
     
     # Create sidebar
     uploaded_file, contamination, threshold, show_training_period, show_feature_importance, show_correlations = create_sidebar()
@@ -324,47 +317,47 @@ def main():
         results_df, error = process_uploaded_file(uploaded_file, contamination, threshold)
         
         if error:
-            st.error(f"❌ Error: {error}")
+            st.error(f"Error: {error}")
             return
         
-        st.success("✅ Analysis completed successfully!")
+        st.success("Analysis completed successfully!")
         
         # Create metrics dashboard
-        st.subheader("📊 Key Metrics")
+        st.subheader("Key Metrics")
         create_metrics_dashboard(results_df)
         
         # Create time series plot
-        st.subheader("📈 Time Series Analysis")
+        st.subheader("Time Series Analysis")
         time_series_fig = create_time_series_plot(results_df, show_training_period)
         st.plotly_chart(time_series_fig, use_container_width=True)
         
         # Feature importance plot
         if show_feature_importance:
-            st.subheader("🎯 Feature Importance Analysis")
+            st.subheader("Feature Importance Analysis")
             feature_fig = create_feature_importance_plot(results_df)
             st.plotly_chart(feature_fig, use_container_width=True)
         
         # Correlation heatmap
         if show_correlations:
-            st.subheader("🔗 Feature Correlations")
+            st.subheader("Feature Correlations")
             # Load original data for correlation analysis
             original_df = pd.read_csv(uploaded_file)
             corr_fig = create_correlation_heatmap(original_df)
             st.plotly_chart(corr_fig, use_container_width=True)
         
         # Detailed anomaly table
-        st.subheader("📋 Top Anomalies Details")
+        st.subheader("Top Anomalies Details")
         anomaly_table = create_anomaly_details_table(results_df)
         st.dataframe(anomaly_table, use_container_width=True)
         
         # Download results
-        st.subheader("💾 Download Results")
+        st.subheader("Download Results")
         csv_buffer = io.StringIO()
         results_df.to_csv(csv_buffer, index=False)
         csv_data = csv_buffer.getvalue()
         
         st.download_button(
-            label="📥 Download Anomaly Results (CSV)",
+            label="Download Anomaly Results (CSV)",
             data=csv_data,
             file_name=f"anomaly_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
             mime="text/csv",
@@ -373,35 +366,35 @@ def main():
         
     else:
         # Show demo option when no file is uploaded
-        st.info("👆 Please upload a CSV file using the sidebar to get started!")
+        st.info("Please upload a CSV file using the sidebar to get started!")
         
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            if st.button("🚀 Run Demo with Sample Data", key="demo_button"):
+            if st.button("Run Demo with Sample Data", key="demo_button"):
                 try:
                     # Run demo with sample data
-                    with st.spinner("🔄 Running demo analysis..."):
+                    with st.spinner("Running demo analysis..."):
                         detect_anomalies("sample_dataset.csv", "anomaly_results_demo.csv")
                     
-                    st.success("✅ Demo completed! Please refresh the page to see results.")
+                    st.success("Demo completed! Please refresh the page to see results.")
                     
                 except Exception as e:
-                    st.error(f"❌ Demo failed: {str(e)}")
+                    st.error(f"Demo failed: {str(e)}")
         
         # Show sample data info
-        st.subheader("📖 About This Tool")
+        st.subheader("About This Tool")
         
         col1, col2 = st.columns(2)
         
         with col1:
             st.markdown("""
-            ### 🎯 What it does:
+            ### What it does:
             - **Detects anomalies** in multivariate time series data
             - **Identifies contributing features** for each anomaly
             - **Provides 0-100 scoring** for easy interpretation
             - **Validates training period** performance
             
-            ### 📊 Features:
+            ### Features:
             - Interactive time series visualization
             - Feature importance analysis
             - Real-time metrics dashboard
@@ -410,13 +403,13 @@ def main():
         
         with col2:
             st.markdown("""
-            ### 📋 Data Requirements:
+            ### Data Requirements:
             - CSV file with **Time** column
             - Multiple numerical sensor columns
             - Time format: `MM/DD/YYYY HH:MM`
             - Training period: 1/1/2004 - 1/5/2004
             
-            ### 🔧 Algorithm:
+            ### Algorithm:
             - **Isolation Forest** for anomaly detection
             - **Statistical deviation** for feature attribution
             - **Standardized scoring** (0-100 scale)
