@@ -35,13 +35,8 @@ def print_menu():
     │                                                                 │
     │  1. 🚀 Enhanced Demo (with visualizations)                      │
     │  2. 🌐 Streamlit Dashboard (web interface)                       │
-    │  3. 📊 Real-time Monitor (live dashboard)                       │
-    │  4. 🔧 Command Line Analysis                                    │
-    │  5. 📸 Generate Visualizations Only                             │
-    │  6. 📄 Generate Summary Report                                  │
-    │  7. 🛠️ Install/Update Dependencies                              │
-    │  8. 📖 View Documentation                                       │
-    │  9. ❌ Exit                                                     │
+    │  3.  Command Line Analysis                                    │
+    │  4. ❌ Exit                                                     │
     │                                                                 │
     └─────────────────────────────────────────────────────────────────┘
     """
@@ -118,33 +113,6 @@ def run_streamlit_dashboard():
         print(f"❌ Error launching dashboard: {e}")
 
 
-def run_realtime_monitor():
-    """Launch the real-time monitoring dashboard"""
-    print("\n📊 Starting Real-time Monitor...")
-    print("=" * 60)
-    print("🔗 Monitor will open at: http://localhost:8050")
-    print("📱 Use Ctrl+C to stop the server")
-    print()
-    
-    try:
-        # Check if dash is installed
-        subprocess.run([sys.executable, "-c", "import dash"], check=True, 
-                      capture_output=True)
-        
-        # Launch monitor
-        subprocess.run([sys.executable, "realtime_monitor.py"])
-        
-    except subprocess.CalledProcessError:
-        print("❌ Dash not installed!")
-        print("💡 Run option 7 to install dependencies first")
-    except FileNotFoundError:
-        print("❌ realtime_monitor.py not found!")
-    except KeyboardInterrupt:
-        print("\n🛑 Monitor stopped by user")
-    except Exception as e:
-        print(f"❌ Error launching monitor: {e}")
-
-
 def run_cli_analysis():
     """Run command line analysis"""
     print("\n🔧 Command Line Analysis")
@@ -185,113 +153,17 @@ def run_cli_analysis():
 
 def generate_visualizations(results_file=None):
     """Generate visualizations for existing results"""
-    print("\n📸 Generating Visualizations...")
-    print("=" * 60)
-    
-    if not results_file:
-        results_file = input("📁 Enter results CSV file path: ").strip()
-    
-    if not os.path.exists(results_file):
-        print(f"❌ File not found: {results_file}")
-        return
-    
-    try:
-        import pandas as pd
-        import utils
-        
-        print(f"📊 Loading data from {results_file}...")
-        df = pd.read_csv(results_file)
-        
-        print("🎨 Creating visualizations...")
-        utils.create_quick_visualization(df, save_plots=True)
-        
-        print("✅ Visualizations generated successfully!")
-        
-    except Exception as e:
-        print(f"❌ Error generating visualizations: {e}")
+    pass  # Function removed - use demo.py instead
 
 
 def generate_summary_report():
     """Generate a comprehensive summary report"""
-    print("\n📄 Generating Summary Report...")
-    print("=" * 60)
-    
-    results_file = input("📁 Enter results CSV file path: ").strip()
-    
-    if not os.path.exists(results_file):
-        print(f"❌ File not found: {results_file}")
-        return
-    
-    try:
-        import pandas as pd
-        import utils
-        
-        print(f"📊 Loading data from {results_file}...")
-        df = pd.read_csv(results_file)
-        
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        report_file = f"anomaly_report_{timestamp}.txt"
-        
-        print("📝 Generating report...")
-        report = utils.generate_summary_report(df, report_file)
-        
-        print(report)
-        print(f"\n📄 Report saved to: {report_file}")
-        
-        # Offer export options
-        print("\n💾 Export Options:")
-        print("1. JSON format")
-        print("2. Excel format") 
-        print("3. Skip export")
-        
-        choice = input("Choose export format (1-3): ").strip()
-        
-        if choice == "1":
-            utils.export_data_for_external_tools(df, "json")
-        elif choice == "2":
-            utils.export_data_for_external_tools(df, "excel")
-        elif choice == "3":
-            pass
-        else:
-            print("Invalid choice, skipping export")
-        
-    except Exception as e:
-        print(f"❌ Error generating report: {e}")
+    pass  # Function removed - use demo.py instead
 
 
 def install_dependencies():
     """Install or update dependencies"""
-    print("\n🛠️ Installing/Updating Dependencies...")
-    print("=" * 60)
-    
-    try:
-        print("📦 Updating pip...")
-        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"], 
-                      check=True)
-        
-        print("📦 Installing requirements...")
-        subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"], 
-                      check=True)
-        
-        print("✅ Dependencies installed successfully!")
-        
-        # Verify key packages
-        print("\n🔍 Verifying installation...")
-        packages = ["pandas", "numpy", "scikit-learn", "matplotlib", "seaborn", 
-                   "streamlit", "plotly", "dash"]
-        
-        for package in packages:
-            try:
-                subprocess.run([sys.executable, "-c", f"import {package}"], 
-                             check=True, capture_output=True)
-                print(f"   ✅ {package}")
-            except:
-                print(f"   ❌ {package}")
-        
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Installation failed: {e}")
-    except FileNotFoundError:
-        print("❌ requirements.txt not found!")
+    pass  # Function removed - use pip directly
 
 
 def show_documentation():
@@ -365,33 +237,23 @@ def main():
         print_menu()
         
         try:
-            choice = input("🎯 Choose an option (1-9): ").strip()
+            choice = input("🎯 Choose an option (1-4): ").strip()
             
             if choice == "1":
                 run_enhanced_demo()
             elif choice == "2":
                 run_streamlit_dashboard()
             elif choice == "3":
-                run_realtime_monitor()
-            elif choice == "4":
                 run_cli_analysis()
-            elif choice == "5":
-                generate_visualizations()
-            elif choice == "6":
-                generate_summary_report()
-            elif choice == "7":
-                install_dependencies()
-            elif choice == "8":
-                show_documentation()
-            elif choice == "9":
+            elif choice == "4":
                 print("\n👋 Thank you for using the Anomaly Detection System!")
                 print("🚀 Have a great day!")
                 break
             else:
-                print("\n❌ Invalid choice. Please select 1-9.")
+                print("\n❌ Invalid choice. Please select 1-4.")
             
             # Pause before showing menu again
-            if choice != "9":
+            if choice != "4":
                 input("\n⏸️  Press Enter to continue...")
                 print("\n" * 2)  # Clear screen effect
                 

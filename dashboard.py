@@ -28,48 +28,6 @@ def setup_page():
         layout="wide",
         initial_sidebar_state="expanded"
     )
-    
-    # Custom CSS for better styling
-    st.markdown("""
-    <style>
-    .main-header {
-        font-size: 3rem;
-        color: #1f77b4;
-        text-align: center;
-        margin-bottom: 2rem;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-    }
-    .metric-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 1rem;
-        border-radius: 10px;
-        color: white;
-        text-align: center;
-        margin: 0.5rem 0;
-    }
-    .alert-box {
-        background: #ff4757;
-        color: white;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-        text-align: center;
-        font-weight: bold;
-    }
-    .success-box {
-        background: #2ed573;
-        color: white;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-        text-align: center;
-        font-weight: bold;
-    }
-    .sidebar .sidebar-content {
-        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-    }
-    </style>
-    """, unsafe_allow_html=True)
 
 
 def create_sidebar():
@@ -355,8 +313,7 @@ def main():
     setup_page()
     
     # Header
-    st.markdown('<h1 class="main-header">🔍 Time Series Anomaly Detection Dashboard</h1>', 
-                unsafe_allow_html=True)
+    st.title("🔍 Time Series Anomaly Detection Dashboard")
     
     # Create sidebar
     uploaded_file, contamination, threshold, show_training_period, show_feature_importance, show_correlations = create_sidebar()
@@ -367,11 +324,10 @@ def main():
         results_df, error = process_uploaded_file(uploaded_file, contamination, threshold)
         
         if error:
-            st.markdown(f'<div class="alert-box">❌ Error: {error}</div>', unsafe_allow_html=True)
+            st.error(f"❌ Error: {error}")
             return
         
-        st.markdown('<div class="success-box">✅ Analysis completed successfully!</div>', 
-                   unsafe_allow_html=True)
+        st.success("✅ Analysis completed successfully!")
         
         # Create metrics dashboard
         st.subheader("📊 Key Metrics")
@@ -426,10 +382,8 @@ def main():
                     # Run demo with sample data
                     with st.spinner("🔄 Running demo analysis..."):
                         detect_anomalies("sample_dataset.csv", "anomaly_results_demo.csv")
-                        results_df = pd.read_csv("anomaly_results_demo.csv")
                     
-                    st.success("✅ Demo completed!")
-                    st.experimental_rerun()
+                    st.success("✅ Demo completed! Please refresh the page to see results.")
                     
                 except Exception as e:
                     st.error(f"❌ Demo failed: {str(e)}")

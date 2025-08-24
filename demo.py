@@ -11,6 +11,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime
 import warnings
+import os
 warnings.filterwarnings('ignore')
 
 from anomaly_detector import detect_anomalies
@@ -20,7 +21,15 @@ import utils
 
 def setup_plotting_style():
     """Setup plotting style for better visualizations"""
-    plt.style.use('seaborn-v0_8')
+    # Use a safe, available style
+    try:
+        plt.style.use('seaborn-v0_8')
+    except OSError:
+        try:
+            plt.style.use('seaborn')
+        except OSError:
+            plt.style.use('default')
+    
     sns.set_palette("husl")
     
     # Configure matplotlib
@@ -405,130 +414,145 @@ def demonstrate_anomaly_detection():
     """
     Run an enhanced demo of the anomaly detection system with visualizations.
     """
-    setup_plotting_style()
-    
-    print_animated_header("🔍 ENHANCED ANOMALY DETECTION DEMO 🔍", "=", 0.02)
-    
-    input_file = "sample_dataset.csv"
-    output_file = "anomaly_results_demo.csv"
-    
-    print(f"\n🚀 Step 1: Running anomaly detection on: {input_file}")
-    detect_anomalies(input_file, output_file)
-    
-    print(f"\n📊 Step 2: Loading and analyzing results")
-    results_df = pd.read_csv(output_file)
-    
-    print(f"📈 Results shape: {results_df.shape}")
-    print(f"⏰ Time range: {results_df['Time'].iloc[0]} to {results_df['Time'].iloc[-1]}")
-    
-    anomaly_scores = results_df[config.ANOMALY_SCORE_COLUMN]
-    utils.print_summary_statistics(anomaly_scores, "📊 Anomaly Score Statistics")
-    
-    # Training period analysis
-    train_mask = results_df['Time'].apply(
-        lambda x: utils.parse_datetime(x) <= config.TRAINING_END
-    )
-    training_scores = anomaly_scores[train_mask]
-    utils.print_summary_statistics(training_scores, "🎯 Training Period Statistics")
-    
-    print(f"\n🚨 Step 3: Top 10 Critical Anomalies")
-    print("-" * 60)
-    top_anomalies = results_df.nlargest(10, config.ANOMALY_SCORE_COLUMN)
-    
-    for i, (_, row) in enumerate(top_anomalies.iterrows(), 1):
-        score = row[config.ANOMALY_SCORE_COLUMN]
-        time = row['Time']
-        top_feature = row[config.TOP_FEATURE_COLUMNS[0]]
-        
-        # Add risk level emoji
-        if score >= 75:
-            risk_emoji = "🔴"
-        elif score >= 50:
-            risk_emoji = "🟠"
-        else:
-            risk_emoji = "🟡"
-        
-        print(f"{risk_emoji} {i:2d}. {time} | Score: {score:6.2f} | Top Feature: {top_feature}")
-    
-    print(f"\n🎯 Step 4: Most Frequent Contributing Features")
-    print("-" * 60)
-    
-    all_features = []
-    for col in config.TOP_FEATURE_COLUMNS:
-        all_features.extend(results_df[col].dropna().tolist())
-    
-    feature_counts = pd.Series(all_features).value_counts()
-    feature_counts = feature_counts[feature_counts.index != ""]
-    
-    for i, (feature, count) in enumerate(feature_counts.head(10).items(), 1):
-        percentage = (count / len(results_df)) * 100
-        bar_length = int(percentage / 2)  # Scale for display
-        bar = "█" * bar_length + "░" * (50 - bar_length)
-        print(f"{i:2d}. {feature:20s}: {count:4d} times ({percentage:5.1f}%) {bar}")
-    
-    print(f"\n✅ Step 5: Validation Results")
-    print("-" * 60)
-    
-    required_cols = [config.ANOMALY_SCORE_COLUMN] + config.TOP_FEATURE_COLUMNS
-    missing_columns = [col for col in required_cols if col not in results_df.columns]
-    
-    if missing_columns:
-        print(f"❌ Missing required columns: {missing_columns}")
-    else:
-        print("✅ All required columns present")
-    
-    min_score = anomaly_scores.min()
-    max_score = anomaly_scores.max()
-    
-    if 0 <= min_score and max_score <= 100:
-        print(f"✅ Anomaly scores in valid range: {min_score:.2f} to {max_score:.2f}")
-    else:
-        print(f"❌ Anomaly scores out of range: {min_score:.2f} to {max_score:.2f}")
-    
-    train_mean = training_scores.mean()
-    train_max = training_scores.max()
-    
-    if train_mean < config.MAX_TRAINING_MEAN_SCORE:
-        print(f"✅ Training mean score: {train_mean:.2f} < {config.MAX_TRAINING_MEAN_SCORE}")
-    else:
-        print(f"❌ Training mean score: {train_mean:.2f} >= {config.MAX_TRAINING_MEAN_SCORE}")
-    
-    if train_max < config.MAX_TRAINING_MAX_SCORE:
-        print(f"✅ Training max score: {train_max:.2f} < {config.MAX_TRAINING_MAX_SCORE}")
-    else:
-        print(f"❌ Training max score: {train_max:.2f} >= {config.MAX_TRAINING_MAX_SCORE}")
-    
-    print(f"\n📊 Step 6: Creating Visualizations")
-    print("-" * 60)
-    
-    # Create all visualizations
-    create_anomaly_time_series_plot(results_df)
-    create_feature_importance_visualization(results_df)
-    create_advanced_analytics_plot(results_df)
-    
-    # Create interactive dashboard
     try:
-        create_interactive_plotly_dashboard(results_df)
+        setup_plotting_style()
+        
+        print_animated_header("🔍 ENHANCED ANOMALY DETECTION DEMO 🔍", "=", 0.02)
+        
+        input_file = "sample_dataset.csv"
+        output_file = "anomaly_results_demo.csv"
+        
+        # Check if input file exists
+        if not os.path.exists(input_file):
+            print(f"❌ Error: Input file '{input_file}' not found!")
+            print("💡 Make sure the sample dataset is in the current directory")
+            return False
+        
+        print(f"\n🚀 Step 1: Running anomaly detection on: {input_file}")
+        detect_anomalies(input_file, output_file)
+        
+        print(f"\n📊 Step 2: Loading and analyzing results")
+        results_df = pd.read_csv(output_file)
+        
+        print(f"📈 Results shape: {results_df.shape}")
+        print(f"⏰ Time range: {results_df['Time'].iloc[0]} to {results_df['Time'].iloc[-1]}")
+        
+        anomaly_scores = results_df[config.ANOMALY_SCORE_COLUMN]
+        utils.print_summary_statistics(anomaly_scores, "📊 Anomaly Score Statistics")
+        
+        # Training period analysis
+        train_mask = results_df['Time'].apply(
+            lambda x: utils.parse_datetime(x) <= config.TRAINING_END
+        )
+        training_scores = anomaly_scores[train_mask]
+        utils.print_summary_statistics(training_scores, "🎯 Training Period Statistics")
+        
+        print(f"\n🚨 Step 3: Top 10 Critical Anomalies")
+        print("-" * 60)
+        top_anomalies = results_df.nlargest(10, config.ANOMALY_SCORE_COLUMN)
+        
+        for i, (_, row) in enumerate(top_anomalies.iterrows(), 1):
+            score = row[config.ANOMALY_SCORE_COLUMN]
+            time = row['Time']
+            top_feature = row[config.TOP_FEATURE_COLUMNS[0]]
+            
+            # Add risk level emoji
+            if score >= 75:
+                risk_emoji = "🔴"
+            elif score >= 50:
+                risk_emoji = "🟠"
+            else:
+                risk_emoji = "🟡"
+            
+            print(f"{risk_emoji} {i:2d}. {time} | Score: {score:6.2f} | Top Feature: {top_feature}")
+        
+        print(f"\n🎯 Step 4: Most Frequent Contributing Features")
+        print("-" * 60)
+        
+        all_features = []
+        for col in config.TOP_FEATURE_COLUMNS:
+            all_features.extend(results_df[col].dropna().tolist())
+        
+        feature_counts = pd.Series(all_features).value_counts()
+        feature_counts = feature_counts[feature_counts.index != ""]
+        
+        for i, (feature, count) in enumerate(feature_counts.head(10).items(), 1):
+            percentage = (count / len(results_df)) * 100
+            bar_length = int(percentage / 2)  # Scale for display
+            bar = "█" * bar_length + "░" * (50 - bar_length)
+            print(f"{i:2d}. {feature:20s}: {count:4d} times ({percentage:5.1f}%) {bar}")
+        
+        print(f"\n✅ Step 5: Validation Results")
+        print("-" * 60)
+        
+        required_cols = [config.ANOMALY_SCORE_COLUMN] + config.TOP_FEATURE_COLUMNS
+        missing_columns = [col for col in required_cols if col not in results_df.columns]
+        
+        if missing_columns:
+            print(f"❌ Missing required columns: {missing_columns}")
+        else:
+            print("✅ All required columns present")
+        
+        min_score = anomaly_scores.min()
+        max_score = anomaly_scores.max()
+        
+        if 0 <= min_score and max_score <= 100:
+            print(f"✅ Anomaly scores in valid range: {min_score:.2f} to {max_score:.2f}")
+        else:
+            print(f"❌ Anomaly scores out of range: {min_score:.2f} to {max_score:.2f}")
+        
+        train_mean = training_scores.mean()
+        train_max = training_scores.max()
+        
+        if train_mean < config.MAX_TRAINING_MEAN_SCORE:
+            print(f"✅ Training mean score: {train_mean:.2f} < {config.MAX_TRAINING_MEAN_SCORE}")
+        else:
+            print(f"❌ Training mean score: {train_mean:.2f} >= {config.MAX_TRAINING_MEAN_SCORE}")
+        
+        if train_max < config.MAX_TRAINING_MAX_SCORE:
+            print(f"✅ Training max score: {train_max:.2f} < {config.MAX_TRAINING_MAX_SCORE}")
+        else:
+            print(f"❌ Training max score: {train_max:.2f} >= {config.MAX_TRAINING_MAX_SCORE}")
+        
+        print(f"\n📊 Step 6: Creating Visualizations")
+        print("-" * 60)
+        
+        # Create all visualizations
+        create_anomaly_time_series_plot(results_df)
+        create_feature_importance_visualization(results_df)
+        create_advanced_analytics_plot(results_df)
+        
+        # Create interactive dashboard
+        try:
+            create_interactive_plotly_dashboard(results_df)
+        except Exception as e:
+            print(f"⚠️  Could not create interactive dashboard: {e}")
+        
+        print(f"\n💾 Step 7: Output Files")
+        print("-" * 60)
+        print(f"📄 Results saved to: {output_file}")
+        print(f"📊 Rows: {len(results_df):,}")
+        print(f"📈 Columns: {len(results_df.columns)}")
+        print(f"📸 Visualization files created:")
+        print(f"   • anomaly_timeseries.png")
+        print(f"   • feature_importance.png")
+        print(f"   • advanced_analytics.png")
+        print(f"   • interactive_dashboard.html")
+        
+        print_animated_header("🎉 ENHANCED DEMO COMPLETED SUCCESSFULLY! 🎉", "=", 0.02)
+        print("\n🚀 Next steps:")
+        print("   • Open the generated PNG files to view static plots")
+        print("   • Open interactive_dashboard.html in your browser for interactive analysis")
+        print("   • Run 'streamlit run dashboard.py' for the web dashboard")
+        print("   • Upload your own data files for analysis!")
+        
+        return True
+
     except Exception as e:
-        print(f"⚠️  Could not create interactive dashboard: {e}")
-    
-    print(f"\n💾 Step 7: Output Files")
-    print("-" * 60)
-    print(f"📄 Results saved to: {output_file}")
-    print(f"📊 Rows: {len(results_df):,}")
-    print(f"📈 Columns: {len(results_df.columns)}")
-    print(f"📸 Visualization files created:")
-    print(f"   • anomaly_timeseries.png")
-    print(f"   • feature_importance.png")
-    print(f"   • advanced_analytics.png")
-    print(f"   • interactive_dashboard.html")
-    
-    print_animated_header("🎉 ENHANCED DEMO COMPLETED SUCCESSFULLY! 🎉", "=", 0.02)
-    print("\n🚀 Next steps:")
-    print("   • Open the generated PNG files to view static plots")
-    print("   • Open interactive_dashboard.html in your browser for interactive analysis")
-    print("   • Run 'streamlit run dashboard.py' for the web dashboard")
-    print("   • Upload your own data files for analysis!")
+        print(f"\n❌ Error during demonstration: {e}")
+        print("💡 Make sure all dependencies are installed:")
+        print("   pip install pandas numpy matplotlib seaborn plotly scikit-learn")
+        return False
 
 
 if __name__ == "__main__":
