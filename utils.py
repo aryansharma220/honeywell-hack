@@ -22,10 +22,44 @@ def parse_datetime(time_str: str) -> datetime:
     Raises:
         ValueError: If datetime format is invalid
     """
+    # Accept datetime objects directly
+    if isinstance(time_str, datetime):
+        return time_str
+
+    if pd.isnull(time_str):
+        raise ValueError(f"Invalid datetime value: {time_str}")
+
+    s = str(time_str).strip()
+
+    # Try the canonical format first, then a list of common fallbacks, then pandas inference
+    tried_formats = []
+    formats = [
+        config.DATETIME_FORMAT,
+        '%Y-%m-%d %H:%M:%S',
+        '%Y-%m-%dT%H:%M:%S',
+        '%Y-%m-%d',
+        '%d/%m/%Y %H:%M',
+        '%d-%m-%Y %H:%M:%S',
+        '%m/%d/%Y %H:%M:%S'
+    ]
+
+    for fmt in formats:
+        tried_formats.append(fmt)
+        try:
+            return datetime.strptime(s, fmt)
+        except Exception:
+            continue
+
+    # Try pandas' flexible parser as a last resort
     try:
-        return datetime.strptime(time_str.strip(), config.DATETIME_FORMAT)
-    except ValueError as e:
-        raise ValueError(f"Invalid datetime format: {time_str}. Expected format: {config.DATETIME_FORMAT}") from e
+        ts = pd.to_datetime(s, infer_datetime_format=True, dayfirst=False, errors='coerce')
+        if pd.isna(ts):
+            raise ValueError
+        # return python datetime
+        return ts.to_pydatetime()
+    except Exception:
+        accepted = ', '.join(tried_formats + ['ISO8601 / pandas inference'])
+        raise ValueError(f"Invalid datetime format: '{time_str}'. Accepted formats include: {accepted}")
 
 
 def validate_dataset(df: pd.DataFrame) -> None:
@@ -69,27 +103,27 @@ def validate_time_range(df: pd.DataFrame) -> Tuple[datetime, datetime]:
 def split_time_series_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Split data into training and analysis periods."""
     validate_dataset(df)
-    
-    training_data = []
-    analysis_data = []
-    
-    for _, row in df.iterrows():
-        time_value = parse_datetime(row['Time'])
-        
-        if config.TRAINING_START <= time_value <= config.TRAINING_END:
-            training_data.append(row)
-        
-        if config.ANALYSIS_START <= time_value <= config.ANALYSIS_END:
-            analysis_data.append(row)
-    
-    if not training_data:
+    # Convert Time column to datetime once, using pandas' parser with coercion
+    df_copy = df.copy()
+    df_copy['DateTime'] = pd.to_datetime(df_copy['Time'], infer_datetime_format=True, errors='coerce')
+
+    # If any entries could not be parsed, raise a clear error
+    invalid_count = df_copy['DateTime'].isna().sum()
+    if invalid_count > 0:
+        raise ValueError(f"Found {invalid_count} invalid/ unparsable Time values. Ensure Time column matches {config.DATETIME_FORMAT} or use a supported format.")
+
+    # Filter rows by configured windows
+    training_mask = (df_copy['DateTime'] >= config.TRAINING_START) & (df_copy['DateTime'] <= config.TRAINING_END)
+    analysis_mask = (df_copy['DateTime'] >= config.ANALYSIS_START) & (df_copy['DateTime'] <= config.ANALYSIS_END)
+
+    training_df = df_copy.loc[training_mask].reset_index(drop=True)
+    analysis_df = df_copy.loc[analysis_mask].reset_index(drop=True)
+
+    if training_df.empty:
         raise ValueError(f"No data found in training period ({config.TRAINING_START} to {config.TRAINING_END})")
-    
-    if not analysis_data:
+
+    if analysis_df.empty:
         raise ValueError(f"No data found in analysis period ({config.ANALYSIS_START} to {config.ANALYSIS_END})")
-    
-    training_df = pd.DataFrame(training_data).reset_index(drop=True)
-    analysis_df = pd.DataFrame(analysis_data).reset_index(drop=True)
     
     training_hours = len(training_df)
     if training_hours < config.MIN_TRAINING_HOURS:

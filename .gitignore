@@ -1,2 +1,8 @@
 __pycache__
+*.pyc
+anomaly_results*.csv
+anomaly_overview.png
+anomaly_timeseries.png
+feature_importance.png
+advanced_analytics.png
 
