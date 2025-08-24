@@ -84,8 +84,7 @@ Files included
 - `requirements.txt` — Python dependencies list
 - `sample_dataset.csv` — sample multivariate time series used for demos/tests
 
-Quick start (recommended for judges)
-
+Quick start 
 1) Create and activate a virtual environment (PowerShell example):
 
 ```powershell
@@ -127,7 +126,7 @@ Behavior & expected outputs
 	- `top_feature_1` .. `top_feature_7` — feature names that contributed most to the anomaly (empty string when fewer contributors)
 - Demo run will save a CSV such as `anomaly_results_demo.csv` and image files like `anomaly_timeseries.png`, `feature_importance.png`, and `advanced_analytics.png` if the plotting libraries are available.
 
-Notes & limitations (important for judges)
+Notes & limitations
 - Single-command wrapper referenced in older docs (`run_demo.py`) is not present — use `python demo.py` or the `launcher.py` menu instead.
 - The Streamlit and Dash UIs require the corresponding packages to be installed (`streamlit`, `dash`). If those packages are not available, run `demo.py` and inspect the generated CSV and PNGs as fallback.
 - The project expects a `Time` column in the CSV and uses the format `%m/%d/%Y %H:%M` by default (see `config.DATETIME_FORMAT`). `utils.parse_datetime` accepts several common formats, but mismatched time formats can cause parsing errors.
@@ -142,10 +141,4 @@ How the detection works (brief)
 - Training period is read from `config.py` (TRAINING_START / TRAINING_END). The model trains an Isolation Forest on the normal period and scores the analysis period.
 - Raw model outputs are calibrated to 0–100 scores and per-row feature importance is estimated by normalized, weighted deviations from training statistics. The top contributors are reported per row.
 
-If you need help or want a one-minute recorded walkthrough, see the repository owner notes.
 
-License
-- MIT
-
-Acknowledgements
-- Built quickly for a hackathon-style project; focuses on end-to-end detection, attribution, and presentation.
